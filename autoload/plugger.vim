@@ -51,6 +51,8 @@ function! plugger#setup(conf) abort
   command! PluggerInstall call plugger#install_new()
   command! -nargs=+ PluggerLoad call plugger#reload_plugins(<f-args>)
   command! -nargs=+ PluggerUpdate call plugger#update(<f-args>)
+  command! -nargs=+ PluggerRemove call plugger#remove_configs(<f-args>)
+  command! -nargs=+ PluggerUninstall call plugger#uninstall(<f-args>)
 
   augroup plugger
     autocmd!
@@ -356,5 +358,31 @@ function! plugger#reload_plugins(...) abort
     let path = s:conf.conf_root . key . '.vim'
     execute 'source' path
     call s:load_plugin(key, plugs, 1)
+  endfor
+endfunction
+
+function! plugger#remove_configs(...) abort
+  let paths = []
+  for key in a:000
+    let path = s:conf.conf_root . key . '.vim'
+    if !filereadable(path)
+      throw '[plugger] plugin ' . key . ' does not exist'
+    endif
+    call add(paths, path)
+  endfor
+
+  for path in paths
+    call delete(path)
+  endfor
+endfunction
+
+function! plugger#uninstall(...) abort
+  call call(function('plugger#remove_configs'), a:000)
+
+  for key in a:000
+    let plugin_path = s:conf.pack_root . key
+    if isdirectory(plugin_path)
+      call delete(plugin_path, 'rf')
+    endif
   endfor
 endfunction
