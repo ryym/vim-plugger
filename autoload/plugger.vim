@@ -8,8 +8,6 @@
 " - Use Vim's package system
 "     - Put all plugins in the '/opt' directory for easy enabling/disabling.
 
-let g:_hoge = 100
-
 let s:conf = {
   \   'pack_root': '',
   \   'conf_root': '',
@@ -26,12 +24,7 @@ let s:load_state = {
   \   'unmet_deps': 3,
   \ }
 
-function! plugger#hoge() abort
-  return [s:conf, g:_hoge]
-endfunction
-
 function! plugger#enable(conf) abort
-  let g:_hoge = 300
   call plugger#setup(a:conf)
   call plugger#load_plugins()
 endfunction
