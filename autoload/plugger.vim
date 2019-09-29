@@ -13,6 +13,7 @@ let s:conf = {
   \   'conf_root': '',
   \   'autoload_prefix': '',
   \   'is_debug': 0,
+  \   'tmp_skip': [],
   \ }
 
 let s:repo_root = expand('<sfile>:p:h:h')
@@ -282,7 +283,7 @@ function! s:load_plugin(key, plugs, ignore_skip) abort
     throw '[plugger] cannot load ' . a:key . ' not installed yet'
   endif
 
-  if !a:ignore_skip && conf.skip_load
+  if !a:ignore_skip && (conf.skip_load || s:should_skip_tmp(a:key))
     let conf.load_state = s:load_state.skipped
     return
   endif
@@ -314,6 +315,15 @@ function! s:load_plugin(key, plugs, ignore_skip) abort
   endif
 
   let conf.load_state = s:load_state.loaded
+endfunction
+
+function! s:should_skip_tmp(key) abort
+  for key in s:conf.tmp_skip
+    if key == a:key
+      return 1
+    endif
+  endfor
+  return 0
 endfunction
 
 function! plugger#add_conf_templates(...) abort
