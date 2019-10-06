@@ -159,7 +159,12 @@ function! s:update_plugins(keys, plugs) abort
   endfunction
 
   function ctx.on_stderr(_ch, errs) abort
-    let self.errs = json_decode(a:errs)
+    try
+      let errs = json_decode(a:errs)
+      let self.errs.plugins = errs
+    catch
+      let self.errs = {'message': a:errs}
+    endtry
   endfunction
 
   function ctx.on_close(_ch) abort
@@ -167,10 +172,14 @@ function! s:update_plugins(keys, plugs) abort
       echom len(self.repos) 'plugins have been installed'
     else
       echohl ErrorMsg
-      for key in keys(self.errs)
-        echom '[plugger]: FAIL ' . key . ' ' . self.errs[key].message
-      endfor
-      echom len(self.errs) 'installations have failed (see messages)'
+      if has_key(self.errs, 'plugins')
+        for key in keys(self.errs.plugins)
+          echom '[plugger]: FAIL ' . key . ' ' . self.errs.plugins[key].message
+        endfor
+        echom len(self.errs) 'installations have failed (see messages)'
+      else
+        echom '[plugger]: Unexpected error: ' . self.errs.message
+      endif
       echohl None
     endif
 
