@@ -336,10 +336,14 @@ function! s:should_skip_tmp(key) abort
 endfunction
 
 function! plugger#add_conf_templates(...) abort
+  let filepath = ''
   for cmd in a:000
     let cmds = split(cmd, ':')
-    call plugger#add_conf_template(cmds[0], join(cmds[1:], ''))
+    if filepath == ''
+      let filepath = plugger#add_conf_template(cmds[0], join(cmds[1:], ''))
+    endif
   endfor
+  execute 'edit' filepath
 endfunction
 
 function! plugger#add_conf_template(name, repo) abort
@@ -362,6 +366,7 @@ function! plugger#add_conf_template(name, repo) abort
     \ 'endfunction',
     \ ]
   call writefile(lines, filepath)
+  return filepath
 endfunction
 
 function! plugger#reload_plugins(...) abort
