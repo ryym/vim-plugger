@@ -11,6 +11,12 @@ Yet another plugin manager for Vim.
 
 [vim-packages]: https://vim-jp.org/vimdoc-en/repeat.html#packages
 
+## Prerequisites
+
+- [Node.js][nodejs] - used to install your plugins concurrently.
+
+[nodejs]: https://nodejs.org/en/
+
 ## Getting Started
 
 1. Install vim-plugger
