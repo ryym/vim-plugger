@@ -51,13 +51,13 @@ endfunction
 
 ```vim
 " plugin/fzf.vim
-function! my#plugin#fzf#configure(conf) abort
+function! plugin#fzf#configure(conf) abort
   let a:conf.repo = 'junegunn/fzf'
   let a:conf.install_if = executable('fzf')
-  let a:conf.after_load = function('my#plugin#fzf#after_load')
+  let a:conf.after_load = function('plugin#fzf#after_load')
 endfunction
 
-function! my#plugin#fzf#after_load()
+function! plugin#fzf#after_load()
   " ...
 endfunction
 ```
@@ -88,14 +88,14 @@ This will generate those files:
 
 ```vim
 " plugin/emmet.vim
-function! my#plugin#emmet#configure(conf) abort
+function! plugin#emmet#configure(conf) abort
   let a:conf.repo = 'mattn/emmet-vim'
 endfunction
 ```
 
 ```vim
 " plugin/surround.vim
-function! my#plugin#surround#configure(conf) abort
+function! plugin#surround#configure(conf) abort
   let a:conf.repo = 'tpope/vim-surround'
 endfunction
 ```
@@ -160,7 +160,7 @@ If the plugin depends on the other plugins, specify their configuration names.
 
 ```vim
 " plugin/lsp.vim
-function! my#plugin#lsp#configure(conf) abort
+function! plugin#lsp#configure(conf) abort
   let a:conf.repo = 'prabirshrestha/vim-lsp'
   let a:conf.depends = ['async']
   let a:conf.async.enabled = 0
@@ -169,7 +169,7 @@ endfunction
 
 ```vim
 " plugin/async.vim
-function! my#plug#async#configure(conf) abort
+function! plug#async#configure(conf) abort
   let a:conf.repo = 'prabirshrestha/async.vim'
   let a:conf.async.enabled = 0
 endfunction
@@ -205,7 +205,7 @@ When you open a file by Vim and the file extension is in this option, the plugin
 Example:
 
 ```vim
-function! my#plugin#jsx_pretty#configure(conf) abort
+function! plugin#jsx_pretty#configure(conf) abort
   let a:conf.repo = 'MaxMEllon/vim-jsx-pretty'
   let a:conf.async.detect_startup_file = ['js', 'jsx', 'tsx']
 endfunction
