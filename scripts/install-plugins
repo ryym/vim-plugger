@@ -54,7 +54,7 @@ class JobContext {
   }
 
   handleError({ plugin, err }) {
-    this.errors[plugin.name] = err;
+    this.errors[plugin.name] = { message: String(err) };
   }
 }
 
@@ -87,7 +87,7 @@ const spawn = (cmd, args, opt) => {
       if (code === 0) {
         resolve();
       } else {
-        reject({ message: err.trim() });
+        reject(err.trim());
       }
     });
   });
