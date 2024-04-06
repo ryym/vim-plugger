@@ -319,11 +319,35 @@ function! s:load_plugin(key, plugs, ignore_skip) abort
     execute 'helptags' doc_dir
   endif
 
+  let after_plugin_dir = s:conf.pack_root . a:key . '/after/plugin'
+  if isdirectory(after_plugin_dir)
+    let paths = s:list_runnable_files_rec(after_plugin_dir, [])
+    for path in paths
+      execute 'source' path
+    endfor
+  endif
+
   if has_key(conf, 'after_load')
     call conf.after_load()
   endif
 
   let conf.load_state = s:load_state.loaded
+endfunction
+
+function! s:list_runnable_files_rec(dir, paths)
+  let files = readdir(a:dir)
+  for file in files
+    let path = a:dir . '/' . file
+    if isdirectory(path)
+      return s:list_runnable_files_rec(path, a:paths)
+    else
+      let ext = strpart(path, len(path) - 4)
+      if ext == '.vim'
+        call add(a:paths, path)
+      endif
+    endif
+  endfor
+  return a:paths
 endfunction
 
 function! s:should_skip_tmp(key) abort
