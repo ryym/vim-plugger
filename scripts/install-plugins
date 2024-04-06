@@ -2,31 +2,31 @@
 
 // A small script to clone repsotiries in parallel.
 
-const cp = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const cp = require("child_process");
+const fs = require("fs");
+const path = require("path");
 
-const startJob = ctx => plugin => {
+const startJob = (ctx) => (plugin) => {
   return updateRepo(ctx, plugin).then(handleFinish(ctx));
 };
 
 const updateRepo = async (ctx, plugin) => {
   try {
-    log('clone', plugin.name, plugin.url);
+    log("clone", plugin.name, plugin.url);
 
     const repoPath = path.join(ctx.rootDir, plugin.name);
     await rmDir(repoPath);
     await gitClone(plugin.url, repoPath);
 
-    log('end', plugin.name);
+    log("end", plugin.name);
     return { plugin };
   } catch (err) {
-    log('error', plugin.name, err);
+    log("error", plugin.name, err);
     return { plugin, err };
   }
 };
 
-const handleFinish = ctx => result => {
+const handleFinish = (ctx) => (result) => {
   if (result.err) {
     ctx.handleError(result);
   }
@@ -72,18 +72,18 @@ const main = async (rootDir, plugins) => {
 
 const spawn = (cmd, args, opt) => {
   return new Promise((resolve, reject) => {
-    let err = '';
+    let err = "";
 
     const p = cp.spawn(cmd, args || [], {
-      stdio: ['ignore', 'ignore', 'pipe'],
+      stdio: ["ignore", "ignore", "pipe"],
       ...opt,
     });
 
-    p.stderr.on('data', data => {
+    p.stderr.on("data", (data) => {
       err += String(data);
     });
 
-    p.on('close', code => {
+    p.on("close", (code) => {
       if (code === 0) {
         resolve();
       } else {
@@ -94,15 +94,15 @@ const spawn = (cmd, args, opt) => {
 };
 
 // (todo) Support Windows if necessary.
-const rmDir = dir => {
+const rmDir = (dir) => {
   if (fs.existsSync(dir)) {
-    return spawn('rm', ['-rf', dir]);
+    return spawn("rm", ["-rf", dir]);
   }
   return Promise.resolve();
 };
 
 const gitClone = (url, dir) => {
-  return spawn('git', ['clone', '--depth', 1, url, dir]);
+  return spawn("git", ["clone", "--depth", 1, url, dir]);
 };
 
 const log = (...values) => {
@@ -114,7 +114,7 @@ const log = (...values) => {
 /* --------------------------------------------------------- */
 
 if (process.argv.length !== 3) {
-  throw new Error('Pass all arguments as a JSON string');
+  throw new Error("Pass all arguments as a JSON string");
 }
 
 const arg = JSON.parse(process.argv[2]);
@@ -122,13 +122,13 @@ const isDebug = arg.is_debug;
 const plugins = arg.plugins;
 
 let rootDir = arg.root_dir;
-if (!rootDir.startsWith('/')) {
+if (!rootDir.startsWith("/")) {
   rootDir = path.resolve(process.cwd(), rootDir);
 }
 
-log('arg', arg);
+log("arg", arg);
 
-main(rootDir, plugins).then(ctx => {
+main(rootDir, plugins).then((ctx) => {
   if (Object.keys(ctx.errors).length > 0) {
     console.error(JSON.stringify(ctx.errors));
     process.exitCode = 1;
