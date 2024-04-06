@@ -152,22 +152,58 @@ function! s:update_plugins(keys, plugs) abort
     call add(repos, {'name': key, 'url': conf.repo})
   endfor
 
+  " Note that we need to handle some differences between Vim and Neovim around job execution.
+  "   - They provide similar but different functions
+  "     - Vim ... job_start
+  "     - Neovim ... jobstart
+  "   - The output format passed to stdout/stderr callbacks are different
+  "     - Vim ... Called for each line of stdout, so `a:out` is a string.
+  "     - Neovim ... Called with multiple output lines, so `a:out` is an array.
+
   let ctx = {'plugs': a:plugs, 'repos': repos, 'errs': {}}
 
-  function ctx.on_stdout(_ch, out) abort
-    echom a:out
+  function ctx.on_stdout(_ch, out, ...) abort
+    if type(a:out) ==# type([])
+      for m in a:out
+        if strlen(m) > 0
+          echom m
+        endif
+      endfor
+    else
+      echom out
+    endif
   endfunction
 
-  function ctx.on_stderr(_ch, errs) abort
+  function ctx.on_stderr(_ch, out, ...) abort
+    " I don't know why but Neovim calls on_stderr with [''] even if there are no stderrs.
+    if type(a:out) ==# type([]) && a:out[0] ==# ''
+      return
+    endif
+
+    if len(self.errs) > 0
+      echohl ErrorMsg
+      echom string(self.errs)
+      echom string(a:out)
+      echom 'stderr callbacks called multiple times unexpectedly'
+      echohl None
+      return
+    endif
+
+    if type(a:out) ==# type([])
+      let out = join(a:out, ' ')
+    else
+      let out = a:out
+    endif
+
     try
-      let errs = json_decode(a:errs)
+      let errs = json_decode(out)
       let self.errs.plugins = errs
     catch
-      let self.errs = {'message': a:errs}
+      let self.errs = {'message': out}
     endtry
   endfunction
 
-  function ctx.on_close(_ch) abort
+  function ctx.on_exit(...) abort
     if len(self.errs) == 0
       echom len(self.repos) 'plugins have been installed'
     else
@@ -205,15 +241,19 @@ function! s:update_plugins(keys, plugs) abort
     \   'plugins': repos,
     \ }
 
-  " TODO: Execute in a terminal window.
-  call job_start(
-    \   [s:repo_root . '/scripts/install-plugins', json_encode(arg)],
-    \   {
-    \     'out_cb': ctx.on_stdout,
-    \     'err_cb': ctx.on_stderr,
-    \     'close_cb': ctx.on_close,
-    \   },
-    \ )
+  let install_script = s:repo_root . '/scripts/install-plugins'
+  if has('nvim')
+    call jobstart([install_script, json_encode(arg)], ctx)
+  else
+    call job_start(
+      \   [install_script, json_encode(arg)],
+      \   {
+      \     'out_cb': ctx.on_stdout,
+      \     'err_cb': ctx.on_stderr,
+      \     'close_cb': ctx.on_exit,
+      \   },
+      \ )
+  endif
 endfunction
 
 function! plugger#plugin_path(key)
