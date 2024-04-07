@@ -299,13 +299,14 @@ function! s:load_plugin(key, plugs, ignore_skip) abort
 
   let deps_ok = 1
   for dep in conf.depends
-    if a:plugs.confs[dep].load_state != s:load_state.loaded
+    if a:plugs.confs[dep].load_state != s:load_state.loaded && !s:is_already_loaded(dep)
       let deps_ok = 0
       break
     endif
   endfor
   if !deps_ok
     let conf.load_state = s:load_state.unmet_deps
+    echom '[plugger] ' . a:key . ' has not loaded dependency: ' . dep
     return
   endif
 
@@ -332,6 +333,17 @@ function! s:load_plugin(key, plugs, ignore_skip) abort
   endif
 
   let conf.load_state = s:load_state.loaded
+endfunction
+
+function! s:is_already_loaded(key)
+  let paths = split(&runtimepath, ',')
+  let target = s:conf.pack_root . a:key
+  for path in paths
+    if path ==# target
+      return 1
+    endif
+  endfor
+  return 0
 endfunction
 
 function! s:list_runnable_files_rec(dir, paths)
