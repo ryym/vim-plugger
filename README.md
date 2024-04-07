@@ -73,6 +73,46 @@ call plugger#enable({
   \ })
 ```
 
+### Lua integration
+
+Neovim users can also use vim-plugger with Lua.
+
+#### Load plugins from Lua
+
+```lua
+-- You may need to add a path where Lua search packages in.
+package.path = package.path .. ';/path/to/.vim/autoload/?.lua'
+
+vim.api.nvim_call_function('plugger#enable', {
+    {
+        conf_root = '/path/to/.vim/autoload/plugin/',
+        autoload_prefix = 'plugin#',
+        lua_require_prefix = 'plugin.',
+    },
+})
+```
+
+#### Configure plugins by Lua
+
+Each plugin configuration can be written by Lua or Vim script.
+In the above example, you put a Lua file in `/path/to/.vim/autoload/plugin/` .
+A configuration file must return a `configure` function that builds a configuration table (dictionary in Vim script).
+The available configuration options is same as Vim script.
+
+```lua
+-- /path/to/.vim/autoload/plugin/foo.lua
+local function configure()
+  return {
+      repo = 'someone/foo.nvim',
+      after_load = function()
+        require('foo').setup({ bar = 'baz' })
+      end,
+  }
+end
+
+return { configure = configure }
+```
+
 ## Commands
 
 ### `PluggerAdd`

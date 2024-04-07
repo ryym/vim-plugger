@@ -14,6 +14,7 @@ let s:conf = {
   \   'autoload_prefix': '',
   \   'is_debug': 0,
   \   'tmp_skip': [],
+  \   'lua_require_prefix': '',
   \ }
 
 let s:repo_root = expand('<sfile>:p:h:h')
@@ -265,12 +266,29 @@ function! s:load_configs() abort
   let plugs = {'keys': [], 'confs': {}}
 
   for path in conf_paths
+    if isdirectory(path)
+      continue
+    endif
+
+    let ext = strpart(path, len(path) - 4)
+    if !(ext ==# '.vim' || ext ==# '.lua' && has('nvim'))
+      continue
+    endif
+
     let key = s:conf_name(path)
 
     let conf = s:initial_conf()
     let conf.installed = isdirectory(s:conf.pack_root . key)
 
-    call function(s:conf.autoload_prefix . key . '#configure')(conf)
+    if ext ==# '.vim'
+      call function(s:conf.autoload_prefix . key . '#configure')(conf)
+    else
+      let built_conf = v:lua.require(s:conf.lua_require_prefix . key).configure()
+      if type(built_conf) != type({})
+        throw '[plugger] configure function at ' . key . ' returned non-dictionary'
+      endif
+      call extend(conf, built_conf)
+    endif
 
     if conf.repo != ''
       " Currently all plugins I use are hosted on GitHub.
@@ -394,7 +412,7 @@ function! s:list_runnable_files_rec(dir, paths)
       return s:list_runnable_files_rec(path, a:paths)
     else
       let ext = strpart(path, len(path) - 4)
-      if ext == '.vim'
+      if ext ==# '.vim' || ext ==# '.lua'
         call add(a:paths, path)
       endif
     endif
@@ -448,7 +466,7 @@ endfunction
 function! plugger#reload_plugins(...) abort
   let plugs = s:load_configs()
   for key in a:000
-    let path = s:conf.conf_root . key . '.vim'
+    let path = s:determine_config_path(key)
     execute 'source' path
     call s:load_plugin(key, plugs, 1)
   endfor
@@ -457,10 +475,7 @@ endfunction
 function! plugger#remove_configs(...) abort
   let paths = []
   for key in a:000
-    let path = s:conf.conf_root . key . '.vim'
-    if !filereadable(path)
-      throw '[plugger] plugin ' . key . ' does not exist'
-    endif
+    let path = s:determine_config_path(key)
     call add(paths, path)
   endfor
 
@@ -478,4 +493,15 @@ function! plugger#uninstall(...) abort
       call delete(plugin_path, 'rf')
     endif
   endfor
+endfunction
+
+function! s:determine_config_path(key)
+  let path = s:conf.conf_root . a:key . '.vim'
+  if !filereadable(path)
+    let path = s:conf.conf_root . a:key . '.lua'
+    if !filereadable(path)
+      throw '[plugger] plugin ' . a:key . ' does not exist'
+    endif
+  endif
+  return path
 endfunction
