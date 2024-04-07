@@ -1,13 +1,3 @@
-" My plugin manager
-"
-" - One configuration file for one plugin
-"     - It makes plugin management easy and scalable rather than
-"       putting all plugin configurations together in a single file.
-" - Allow to define before/after load hook
-"     - It is important that we can define them in a one place per plugin.
-" - Use Vim's package system
-"     - Put all plugins in the '/opt' directory for easy enabling/disabling.
-
 let s:conf = {
   \   'pack_root': '',
   \   'conf_root': '',

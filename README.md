@@ -1,13 +1,20 @@
 # vim-plugger
 
-Yet another plugin manager for Vim.
+Yet another plugin manager for Vim and Neovim.
 
-## Features
+## Concept
 
-- One configuration file per plugin
-- Based on Vim's builtin [packages][vim-packages] system
-- Before/after load hook
-- Async loading
+### One configuration file per plugin
+
+- You can find a plugin configuration directly from file search.
+    - No need to search around a plugin name from large vimrc
+- By `before_load` / `after_load` hooks, any configurations about a plugin can be placed in one file.
+
+### Minimal feature set
+
+- Plugins are managed by Vim's builtin [packages][vim-packages] system.
+- Plugins are loaded lazily by default, by just delaying loadings a bit after Vim's startup.
+    - Keep fast startup without bunch of customization of load timings (on command/key/filetype, etc)
 
 [vim-packages]: https://vim-jp.org/vimdoc-en/repeat.html#packages
 
@@ -20,7 +27,7 @@ Yet another plugin manager for Vim.
 ## Getting Started
 
 1. Install vim-plugger
-2. Create configuration files as autoload scripts
+2. Create configuration files as Vim autoload scripts or Lua modules
 3. Run `plugger#enable`
 
 ### Install
@@ -34,6 +41,7 @@ git clone https://github.com/ryym/vim-plugger /path/to/.vim/pack/init/start/vim-
 ### Configure
 
 Create configuration files per plugin as autoload scripts.
+See the [Lua integration](#lua-integration) section for Lua usage.
 
 ```
 autoload/
@@ -73,11 +81,11 @@ call plugger#enable({
   \ })
 ```
 
-### Lua integration
+## Lua integration
 
 Neovim users can also use vim-plugger with Lua.
 
-#### Load plugins from Lua
+### Load plugins from Lua
 
 ```lua
 -- You may need to add a path where Lua search packages in.
@@ -87,20 +95,22 @@ vim.api.nvim_call_function('plugger#enable', {
     {
         conf_root = '/path/to/.vim/autoload/plugin/',
         autoload_prefix = 'plugin#',
+        -- You may need to define a module prefix used on `require` .
         lua_require_prefix = 'plugin.',
     },
 })
 ```
 
-#### Configure plugins by Lua
+### Configure plugins by Lua
 
-Each plugin configuration can be written by Lua or Vim script.
+Each plugin configuration can be written in Lua or Vim script.
 In the above example, you put a Lua file in `/path/to/.vim/autoload/plugin/` .
-A configuration file must return a `configure` function that builds a configuration table (dictionary in Vim script).
-The available configuration options is same as Vim script.
+A configuration file must return a `configure` function that builds a configuration table.
+The available options is same as Vim script.
 
 ```lua
 -- /path/to/.vim/autoload/plugin/foo.lua
+
 local function configure()
   return {
       repo = 'someone/foo.nvim',
@@ -113,32 +123,9 @@ end
 return { configure = configure }
 ```
 
+Lua configuration files are only loaded on Neovim, and ignored on Vim.
+
 ## Commands
-
-### `PluggerAdd`
-
-Add new configuration files inside your `conf_root` without installing them.
-
-```vim
-" PluggerAdd name:owner/repo ...
-:PluggerAdd emmet:mattn/emmet-vim surround:tpope/vim-surround
-```
-
-This will generate those files:
-
-```vim
-" plugin/emmet.vim
-function! plugin#emmet#configure(conf) abort
-  let a:conf.repo = 'mattn/emmet-vim'
-endfunction
-```
-
-```vim
-" plugin/surround.vim
-function! plugin#surround#configure(conf) abort
-  let a:conf.repo = 'tpope/vim-surround'
-endfunction
-```
 
 ### `PluggerInstall`
 
@@ -166,6 +153,31 @@ Remove specified plugins and their configuration files.
 
 ```vim
 :PluggerUninstall easymotion fugitive
+```
+
+### `PluggerAdd`
+
+Add new configuration files inside your `conf_root` without installing them.
+
+```vim
+" PluggerAdd name:owner/repo ...
+:PluggerAdd emmet:mattn/emmet-vim surround:tpope/vim-surround
+```
+
+This will generate those files:
+
+```vim
+" plugin/emmet.vim
+function! plugin#emmet#configure(conf) abort
+  let a:conf.repo = 'mattn/emmet-vim'
+endfunction
+```
+
+```vim
+" plugin/surround.vim
+function! plugin#surround#configure(conf) abort
+  let a:conf.repo = 'tpope/vim-surround'
+endfunction
 ```
 
 
@@ -222,25 +234,24 @@ it is guaranteed that vim-plugger loads dependency plugins before the dependent.
 
 You can register callback functions called before/after a plugin is loaded.
 
-### `skip_load` (type: Number, default: 0)
+### `skip_load` (type: Number (Boolean), default: 0)
 
-If the value is 1, vim-plugger skips loading of that plugin.
+If the value is 1, vim-plugger skips loading of that plugin at Vim's startup.
 You can load the plugin later by `PluggerLoad`.
 
-### `install_if` (type: Number, default: 1)
+### `install_if` (type: Number (Boolean), default: 1)
 
 If the value is 0, vim-plugger does not install the plugin.
 You can use this for example to install some plugins on some specific OS or only either of Vim/NeoVim.
 
-### `async.enabled` (type: Number, default: 1)
+### `async.enabled` (type: Number (Boolean), default: 1)
 
 If the value is 1, vim-plugger loads the plugin asynchronously.
 This will prevent vim-plugger from slowing Vim's startup time, even if some plugins take a long time to initialize.
 
-
 ### `async.detect_startup_file` (type: List of String)
 
-When you open a file by Vim and the file extension is in this option, the plugin is loaded synchronously.
+When you open a file and the file extension is in this option, the plugin is loaded synchronously even if `async.enabled` is 1.
 
 Example:
 
@@ -263,8 +274,8 @@ $ vim foo.jsx
 $ vim foo.tsx
 ```
 
-The reason this option exists is some plugin does not work correctly when loaded after a file is open.
-Using this option, you can load a plugin before file is open only if necessary.
+The reason this option exists is some plugin does not work correctly when loaded after opening a file.
+Using this option, you can load a plugin before opening a file only if necessary.
 
 ## Example of Use
 
