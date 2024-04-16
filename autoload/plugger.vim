@@ -55,12 +55,7 @@ function! plugger#load_plugins() abort
   let key_groups = s:classify_plug_keys(plugs, startup_file)
 
   call s:load_plugins(key_groups[0], plugs)
-  call timer_start(1, {-> s:load_plugins_async(key_groups[1], plugs)})
-endfunction
-
-function! s:load_plugins_async(keys, plugs) abort
-  call s:load_plugins(a:keys, a:plugs)
-  doautocmd User plugger_async_load_post
+  call timer_start(0, {-> s:load_plugin_async_rec(key_groups[1], plugs, 0)})
 endfunction
 
 function! s:load_plugins(keys, plugs) abort
@@ -70,6 +65,19 @@ function! s:load_plugins(keys, plugs) abort
       call s:load_plugin(key, a:plugs, 0)
     endif
   endfor
+endfunction
+
+function! s:load_plugin_async_rec(keys, plugs, idx) abort
+  if a:idx >= len(a:keys)
+    doautocmd User plugger_async_load_post
+  else
+    let key = a:keys[a:idx]
+    let conf = a:plugs.confs[key]
+    if conf.installed
+      call s:load_plugin(key, a:plugs, 0)
+    endif
+    call timer_start(0, {-> s:load_plugin_async_rec(a:keys, a:plugs, a:idx + 1)})
+  endif
 endfunction
 
 function! s:classify_plug_keys(plugs, startup_file) abort
