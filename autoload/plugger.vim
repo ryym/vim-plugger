@@ -36,6 +36,7 @@ function! plugger#setup(conf) abort
   command! PluggerInstall call plugger#install_new()
   command! -nargs=+ PluggerLoad call plugger#reload_plugins(<f-args>)
   command! -nargs=+ PluggerUpdate call plugger#update(<f-args>)
+  command! PluggerUpdateAll call plugger#update_all()
   command! -nargs=+ PluggerRemove call plugger#remove_configs(<f-args>)
   command! -nargs=+ PluggerUninstall call plugger#uninstall(<f-args>)
 
@@ -135,6 +136,11 @@ endfunction
 function! plugger#update(...) abort
   let plugs = s:load_configs()
   call s:update_plugins(a:000, plugs)
+endfunction
+
+function! plugger#update_all() abort
+  let plugs = s:load_configs()
+  call s:update_plugins(plugs.keys, plugs)
 endfunction
 
 function! s:update_plugins(keys, plugs) abort
